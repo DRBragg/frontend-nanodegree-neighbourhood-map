@@ -1,5 +1,7 @@
+// API Keys for FourSquare
 const client_id = 'KCPDTV3MZKNPMT4BK34LHM4OUTUCLQQNK1FUCASJMQDYXTAP'
 const client_secret = 'PPKU0WSXUD5WZLIXFKYU1IIXRBB3JJKK02ONCTLY5HZ2NSWU'
+// Array of location objects
 const locations = [
   {
     title: 'Evil Genius Brewery',
@@ -38,6 +40,7 @@ const locations = [
   }
 ];
 
+// Called when Google Maps API loads, calls the renderMap function
 function initMap() {
   ko.applyBindings(renderMap());
 }
@@ -48,17 +51,21 @@ const renderMap = () => {
   self.markers = [];
   self.infoWindows = [];
 
+  // Uses the FourSquare API to gather location information
   self.getInfo = (marker, infowindow) => {
     if (infowindow.marker !== marker) {
       infowindow.setContent('');
       infowindow.marker = marker;
+      // creates a url to call on the FS API
       let fourSquareApi = `https://api.foursquare.com/v2/venues/search?ll=${marker.lat},${marker.lng}&query=${marker.title.split(" ").join("-")}&limit=1&client_id=${client_id}&client_secret=${client_secret}&v=20180425`;
       fetch(fourSquareApi).then(function(response){
         if (response.ok) {
           return response.json()
         }
+        // if the response is not 'OK' throw an error
         window.alert('Unable to load the FourSquare API, please try again later.');
         }).then(function(data){
+          // Build content layout from returned data
           let venue = data.response.venues[0];
           let content = `<strong>${marker.getTitle()}</strong><br/>`;
           content += `<p>${venue.location.formattedAddress[0]}<br/>`;
@@ -66,8 +73,10 @@ const renderMap = () => {
           content += `<a href="https://foursquare.com/v/${venue.id}" target="_blank">Check out ${venue.name} on FourSquare</a>`;
           return content
         }).then(function(content){
+          // set the content to the inforWindow of the location
           infowindow.setContent(content);
           infowindow.open(map, marker);
+          // Add an event listener to handle closing the infoWindow
           infowindow.addListener('closeclick', function() {
             infowindow.marker = null;
           });
@@ -75,6 +84,7 @@ const renderMap = () => {
     }
   };
 
+  // handles calling getInfo and animating each marker
   self.bounceAndGenerate = function() {
     self.infoWindows.forEach((infowindow) => {
       infowindow.close();
@@ -86,6 +96,7 @@ const renderMap = () => {
     }).bind(this), 1500);
   };
 
+  // Handles the inital map render
   self.initMap = function() {
     let map = new google.maps.Map(document.getElementById('map'), {
       center: {
@@ -95,6 +106,7 @@ const renderMap = () => {
       zoom: 14
     });
 
+    // Loop through each location in the locations array and make a map marker
     for (i = 0; i < locations.length; i++) {
       this.infoWindow = new google.maps.InfoWindow({
         content: locations[i].title
@@ -122,14 +134,17 @@ const renderMap = () => {
         }
     };
 
+    // call this.initMap
     self.initMap();
 
+    // handles the search function
     self.filteredList = ko.computed(function() {
       let results = [];
       for (i = 0; i < self.markers.length; i++) {
         let markerLocation = this.markers[i];
         this.name = this.markers[i].title;
         markerLocation.bounce = self.markers[i].bounce;
+        // make case insensitive
         if (markerLocation.title.toLowerCase().includes(this.searchTerm().toLowerCase())) {
           results.push(markerLocation);
           this.markers[i].setVisible(true);
@@ -141,10 +156,12 @@ const renderMap = () => {
     }, this);
  }
 
+// Error handled for the Google Maps API
 function mapError() {
 	window.alert('Unable to load Google Maps API, please try again later.');
 }
 
+// Uses jQuery to handle open and closing the side navigation
 $('#menu-toggle').click(function(e) {
     e.preventDefault();
     $('#wrapper').toggleClass('toggled');
