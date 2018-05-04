@@ -58,12 +58,13 @@ const renderMap = () => {
       infowindow.marker = marker;
       // creates a url to call on the FS API
       let fourSquareApi = `https://api.foursquare.com/v2/venues/search?ll=${marker.lat},${marker.lng}&query=${marker.title.split(" ").join("-")}&limit=1&client_id=${client_id}&client_secret=${client_secret}&v=20180425`;
+      // The fetch API makes use of promises to function like async
       fetch(fourSquareApi).then(function(response){
         if (response.ok) {
           return response.json()
         }
         // if the response is not 'OK' throw an error
-        window.alert('Unable to load the FourSquare API, please try again later.');
+        throw new Error('Unable to load the FourSquare API, please try again later.');
         }).then(function(data){
           // Build content layout from returned data
           let venue = data.response.venues[0];
@@ -80,6 +81,8 @@ const renderMap = () => {
           infowindow.addListener('closeclick', function() {
             infowindow.marker = null;
           });
+        }).catch(function(error) {
+          window.alert(error.message)
         })
     }
   };
